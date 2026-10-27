@@ -36,8 +36,12 @@ The workflow listens to both names, so either works.
 
 | Job | What it does | Blocks the APK? |
 |---|---|---|
-| Analyse and test | `flutter analyze`, `flutter test`, and the `ppg_core` tests against the Python fixtures | No. It is marked non-blocking on purpose, so a red check does not cost you a build |
+| Analyse and test | `flutter analyze` on the app, `dart analyze` and `dart test` on `packages/ppg_core`, and the app tests | No. It is marked non-blocking on purpose, so a red check does not cost you a build |
 | Release APK | `flutter build apk --release` and uploads the APK | This is the one you want |
+
+The two packages are analysed separately on purpose: `ppg_core` depends on
+`package:test`, which the app does not, so the root analysis excludes
+`packages/**` and the core is checked from inside its own directory instead.
 
 The toolchain is pinned to the versions the app was verified with:
 
@@ -181,6 +185,7 @@ Do this once, on the phone, before trusting a real capture.
 | Symptom | Cause | Fix |
 |---|---|---|
 | Workflow fails at `flutter pub get` | Flutter version drifted from the lockfile | The workflow pins 3.47.8; if you change `pubspec.yaml`'s SDK constraint, change `FLUTTER_VERSION` too |
+| "Analyse and test" is red but "Release APK" is green | The check job found a lint, an analysis error in a test file, or a test failure. It is deliberately non-blocking | The APK still installs and runs. Open the failed step for the exact file and line |
 | Workflow fails at Gradle: "requires compile against 36" | SDK platform 36 missing | The workflow installs it; check the "Install the SDK platform" step log |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | The installed copy was signed with a different key (an older build, or a local `flutter run`) | Uninstall PPG Lab once, then install the new APK. Every later CI build updates cleanly |
 | "App not installed" / "Invalid package" | Corrupt download, or the APK was unzipped from a partial artifact | Re-download the artifact and compare `SHA256SUMS.txt` |

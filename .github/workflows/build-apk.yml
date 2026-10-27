@@ -45,10 +45,10 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -63,15 +63,30 @@ jobs:
       - name: Dependencies
         run: flutter pub get
 
-      - name: Static analysis
-        run: flutter analyze
-
-      - name: App tests
-        run: flutter test
-
+      # ppg_core is a separate package. Its dependencies have to be fetched
+      # before it can be analysed, and its tests need package:test, which the
+      # app does not depend on.
       - name: Core dependencies
         working-directory: packages/ppg_core
         run: dart pub get
+
+      - name: Static analysis (app)
+        run: flutter analyze
+
+      - name: Static analysis (core)
+        working-directory: packages/ppg_core
+        run: dart analyze
+
+      # `flutter test` opens an in-memory SQLite database through drift, which
+      # needs the unversioned libsqlite3.so that only the -dev package provides
+      # on the runner image.
+      - name: sqlite3 for the app tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libsqlite3-dev
+
+      - name: App tests
+        run: flutter test
 
       - name: Core tests against the Python fixtures
         working-directory: packages/ppg_core
@@ -83,10 +98,10 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}

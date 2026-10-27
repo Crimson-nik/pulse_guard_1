@@ -13,6 +13,11 @@ analyzer:
   exclude:
     - build/**
     - android/**
+    # packages/ppg_core is a separate package with its own dependencies
+    # (`package:test`), so it is analysed with `dart analyze` inside its own
+    # directory rather than against the app's package config. Without this the
+    # root analysis cannot resolve its test imports and fails.
+    - packages/**
 
 linter:
   # The lint rules applied to this project can be customized in the
