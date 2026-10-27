@@ -1,0 +1,14 @@
+.toolchain/
+*.log
+build/
+.dart_tool/
+node_modules/
+tools/pyref/.venv/
+__pycache__/
+*.pyc
+.idea/
+*.iml
+.flutter-plugins-dependencies
+# The paper is cited, not redistributed. Kept locally, out of the repository.
+1-s2.0-S0045790622003160-main.pdf
+.kotlin/
