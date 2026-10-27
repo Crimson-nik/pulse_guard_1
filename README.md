@@ -36,8 +36,9 @@ reproduction, built to the text of the paper rather than to an author's binary.
 |---|---|
 | [docs/journal-walkthrough.md](docs/journal-walkthrough.md) | The paper explained: signal, both methods, why the first fails, the equations, the resolution arithmetic, and the errors in the paper |
 | [docs/app-walkthrough.md](docs/app-walkthrough.md) | Every screen, every state, and where each paper concept lands in the interface |
-| [docs/decisions.md](docs/decisions.md) | Eighteen decisions, each with its reason, including every place the paper is ambiguous or wrong |
+| [docs/decisions.md](docs/decisions.md) | Twenty decisions, each with its reason, including every place the paper is ambiguous or wrong |
 | [docs/validation.md](docs/validation.md) | What was verified here, what was not, and the protocol for checking accuracy against a real instrument |
+| [docs/ci-and-install.md](docs/ci-and-install.md) | Push to a new repository, let Actions build the APK, and install it on a Galaxy A35 |
 | [DESIGN.md](DESIGN.md) | Architecture, module boundaries, storage, and the visual system |
 | [docs/screenshots/](docs/screenshots/) | All nine screens, rendered from the widget tree by the golden test, not captured from a device |
 
@@ -80,6 +81,25 @@ absence of network access is enforced by the operating system.
 flutter pub get
 flutter build apk
 ```
+
+The APK lands at `build/app/outputs/flutter-apk/app-release.apk`. It is signed
+with the debug key unless `android/key.properties` exists, which is fine for
+sideloading and not fine for a store upload.
+
+### Build the APK on GitHub instead
+
+`.github/workflows/build-apk.yml` builds it on every push, on a manual run, and
+on a `v*` tag. No Android SDK is needed locally.
+
+```
+git push origin master            # APK appears under Actions -> Artifacts
+git tag v1.0.0 && git push origin v1.0.0   # APK attached to a GitHub Release
+```
+
+The toolchain is pinned to Flutter 3.47.8 / Dart 3.13.7 / JDK 17, the versions
+this project was verified with. Release signing from repository secrets, the
+download steps and the Samsung A35 install checklist are in
+[docs/ci-and-install.md](docs/ci-and-install.md).
 
 `check.sh` is the full verification: it regenerates the fixtures from the
 Python reference, runs the core tests against them, then analyses and tests

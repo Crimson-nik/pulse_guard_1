@@ -9,6 +9,15 @@ __pycache__/
 .idea/
 *.iml
 .flutter-plugins-dependencies
+
+# Signing material. Never commit a keystore or its passwords.
+key.properties
+*.jks
+*.keystore
+
+# APKs collected by the CI script or copied out by hand.
+dist/
+
 # The paper is cited, not redistributed. Kept locally, out of the repository.
 1-s2.0-S0045790622003160-main.pdf
 .kotlin/

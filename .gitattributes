@@ -1,0 +1,20 @@
+# Normalise line endings so a clone on Windows and a run on Ubuntu behave the
+# same. Gradle wrapper scripts and bash scripts must keep LF; batch files need
+# CRLF.
+* text=auto eol=lf
+
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+*.sh    text eol=lf
+
+# Binary assets: never diff, never convert.
+*.jar     binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.webp    binary
+*.ttf     binary
+*.otf     binary
+*.jks     binary
+*.keystore binary

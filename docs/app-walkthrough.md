@@ -243,5 +243,9 @@ flutter run         # with a device attached
 flutter build apk   # signed with the debug key by default
 ```
 
+The APK in `docs/ci-and-install.md` is the same build run on GitHub Actions,
+with the toolchain pinned. Use that one for the phone: it is reproducible from
+the repository and needs no local Android SDK.
+
 `check.sh` also regenerates the Python fixtures and fails if the Dart port
 drifts from them.

@@ -1,0 +1,215 @@
+name: Build APK
+
+# Push to main/master -> APK as a workflow artifact.
+# Push a tag like v1.0.0 -> the same APK is attached to a GitHub Release.
+# Actions tab -> "Run workflow" -> manual build, with an optional version.
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      build_name:
+        description: "versionName, e.g. 1.0.1 (blank: use pubspec.yaml)"
+        required: false
+        default: ""
+        type: string
+      build_number:
+        description: "versionCode (blank: use the workflow run number)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Must match .metadata / pubspec.lock, which are pinned to Dart 3.13.7.
+  FLUTTER_VERSION: "3.47.8"
+  JAVA_VERSION: "17"
+
+jobs:
+  # Non-blocking: a failing test should be visible, but it must not stop the
+  # APK from being built. The maths is checked here as well as on a laptop.
+  checks:
+    name: Analyse and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Dependencies
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: App tests
+        run: flutter test
+
+      - name: Core dependencies
+        working-directory: packages/ppg_core
+        run: dart pub get
+
+      - name: Core tests against the Python fixtures
+        working-directory: packages/ppg_core
+        run: dart test
+
+  apk:
+    name: Release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Show toolchain
+        run: |
+          flutter --version
+          java -version
+
+      - name: Accept Android SDK licences
+        run: timeout 180 bash -c 'yes | flutter doctor --android-licenses' > /dev/null 2>&1 || true
+
+      - name: Install the SDK platform the app compiles against
+        run: |
+          SDKMANAGER="${ANDROID_SDK_ROOT:-$ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          if [ -x "$SDKMANAGER" ]; then
+            timeout 300 bash -c "yes | '$SDKMANAGER' 'platforms;android-36' 'build-tools;36.0.0'" \
+              > /dev/null 2>&1 || true
+          fi
+
+      # A debug key that survives between runs, so a new build installs as an
+      # update over the previous one instead of failing with a signature
+      # mismatch. Without this, every runner generates a different debug key.
+      # Add the KEYSTORE_BASE64 secret (see docs/ci-and-install.md) to sign
+      # with a real release key instead.
+      - name: Restore the debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
+            {
+              printf 'storeFile=release.jks\n'
+              printf 'storePassword=%s\n' "$KEYSTORE_PASSWORD"
+              printf 'keyAlias=%s\n' "$KEY_ALIAS"
+              printf 'keyPassword=%s\n' "$KEY_PASSWORD"
+            } > android/key.properties
+            echo "Signing with the release keystore from repository secrets."
+          else
+            echo "No KEYSTORE_BASE64 secret: signing with the cached debug key."
+            echo "The APK installs normally; it is not suitable for Play Store upload."
+          fi
+
+      - name: Resolve version
+        id: version
+        run: |
+          NAME="${{ github.event.inputs.build_name }}"
+          if [ -z "$NAME" ] && [[ "$GITHUB_REF_NAME" == v* ]]; then
+            NAME="${GITHUB_REF_NAME#v}"
+          fi
+          NUMBER="${{ github.event.inputs.build_number }}"
+          if [ -z "$NUMBER" ]; then
+            NUMBER="$GITHUB_RUN_NUMBER"
+          fi
+          PUBSPEC_VERSION="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n1)"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+          echo "pubspec=$PUBSPEC_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: ${NAME:-$PUBSPEC_VERSION} (build $NUMBER)"
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Build the release APK
+        run: |
+          ARGS=(--build-number="${{ steps.version.outputs.number }}")
+          if [ -n "${{ steps.version.outputs.name }}" ]; then
+            ARGS+=(--build-name="${{ steps.version.outputs.name }}")
+          fi
+          flutter build apk --release "${ARGS[@]}"
+
+      - name: Collect the APK and checksum
+        run: |
+          mkdir -p dist
+          BASE="${{ steps.version.outputs.pubspec }}"
+          BASE="${BASE%%+*}"
+          OUT="dist/PPG-Lab-${BASE}-build${{ steps.version.outputs.number }}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$OUT"
+          (cd dist && sha256sum ./*.apk > SHA256SUMS.txt)
+          ls -lh dist
+
+      - name: Summary
+        run: |
+          {
+            echo "### PPG Lab APK"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Version | \`${{ steps.version.outputs.pubspec }}\` (build ${{ steps.version.outputs.number }}) |"
+            echo "| Size | $(du -h dist/*.apk | cut -f1) |"
+            echo "| SHA-256 | \`$(cut -d' ' -f1 dist/SHA256SUMS.txt)\` |"
+            echo ""
+            echo "Download the artifact below, unzip it, and open the APK on the phone."
+            echo "Install steps for the Galaxy A35: \`docs/ci-and-install.md\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ppg-lab-apk-${{ steps.version.outputs.number }}
+          path: dist/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Attach the APK to a GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
+          generate_release_notes: true

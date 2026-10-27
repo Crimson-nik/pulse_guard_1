@@ -37,6 +37,15 @@ machine has no camera, no Android device and no human.
 
 Two facts worth stating because the app makes claims about them.
 
+**The APK you install is rebuilt by CI, not copied from the machine above.**
+`.github/workflows/build-apk.yml` pins the same Flutter 3.47.8 / Dart 3.13.7 and
+JDK 17, runs `flutter build apk --release` on a clean Ubuntu runner, and
+publishes the result as a workflow artifact and, on a `v*` tag, as a release
+asset. `docs/ci-and-install.md` describes the pipeline and the install
+checklist for a Galaxy A35. The build note above records the toolchain that was
+used the first time the project was verified; CI is what keeps it true after a
+change.
+
 **No internet permission in the release build.** `aapt2 dump badging` on
 `app-release.apk` lists camera and the generated receiver permission and
 nothing else. The debug and profile manifests do add `INTERNET`, because the

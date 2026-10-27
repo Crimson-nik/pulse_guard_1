@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Size
+import android.view.WindowManager
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -165,6 +166,7 @@ class PpgCameraPlugin(
                 )
                 startedAtNanos = System.nanoTime()
                 setTorch(true)
+                keepScreenOn(true)
                 result.success(true)
             } catch (error: Exception) {
                 result.error("camera_start_failed", error.message, null)
@@ -174,11 +176,33 @@ class PpgCameraPlugin(
 
     private fun stopCapture() {
         setTorch(false)
+        keepScreenOn(false)
         camera = null
         analysis?.clearAnalyzer()
         analysis = null
         provider?.unbindAll()
         startedAtNanos = 0L
+    }
+
+    /**
+     * Holds the screen awake for the length of a capture.
+     *
+     * Thirty seconds is close to the default screen timeout on many phones,
+     * and a screen that sleeps pauses the activity and unbinds the camera,
+     * which ends the frame stream halfway through the measurement. The flag
+     * is cleared as soon as the capture stops, so it does not keep the display
+     * on while the app is merely being read.
+     */
+    private fun keepScreenOn(on: Boolean) {
+        try {
+            if (on) {
+                activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            } else {
+                activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        } catch (_: Exception) {
+            // A window that refuses the flag is not a reason to fail a capture.
+        }
     }
 
     private fun setTorch(on: Boolean) {

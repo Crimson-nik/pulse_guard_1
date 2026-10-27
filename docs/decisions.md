@@ -243,6 +243,43 @@ has to carry the mode and the parameters.
 
 ---
 
+## Build and device decisions
+
+### D19. The APK is built by GitHub Actions, pinned to one toolchain
+
+The project was verified with Flutter 3.47.8 / Dart 3.13.7 / JDK 17 / Gradle
+9.3.1 / AGP 9.1.0. A laptop build reproduces that only if the same versions
+happen to be installed, and the phone that will run it is not this machine.
+
+`.github/workflows/build-apk.yml` pins those versions, builds
+`flutter build apk --release` on every push, and publishes the APK as a
+workflow artifact and, on a `v*` tag, as a release asset. The APK that goes on
+the phone is then a product of the repository, not of one laptop.
+
+Release signing is optional. Four repository secrets put a real release key in
+`android/key.properties`; without them the build is signed with the debug key,
+which still installs and still updates. The debug key is cached between runs,
+because a fresh key per run would make every build refuse to install over the
+last one.
+
+**Cost:** a shared runner takes minutes, and the workflow has to be changed in
+step with the SDK constraint. `docs/ci-and-install.md` carries the rest.
+
+### D20. The screen is held awake for the thirty seconds of a capture
+
+A capture is exactly the length of a typical screen timeout. If the display
+sleeps, the activity pauses, CameraX unbinds, and the frame stream stops
+halfway through the measurement, leaving a failed capture and a half drawn
+trace.
+
+`FLAG_KEEP_SCREEN_ON` is set when the camera starts and cleared when the
+capture stops, so the display stays on for a measurement and behaves normally
+everywhere else in the app.
+
+**Cost:** none. The flag is only held while a capture is running.
+
+---
+
 ## Interface decisions
 
 These do not touch the maths. They are here because they were judgement calls
