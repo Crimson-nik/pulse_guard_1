@@ -96,11 +96,15 @@ phone.
 analysed through both pipelines. Sweep the slider from 45 to 120 bpm and watch
 the paper path error. It should stay inside about two and a half beats per
 minute, which is one bin of the grid plus the ceiling. If it does not, either
-the frame rate measurement or the transform is wrong.
+the frame rate measurement or the transform is wrong. This synthetic path
+deliberately skips the camera bias correction (D21); it tests the paper
+arithmetic, not the sensor.
 
 **Re-run a stored capture.** Pick a session and re-analyse the stored samples.
 The paper path must reproduce the stored numbers exactly. A mismatch means the
-code changed since the capture was saved, or the record is incomplete.
+code changed since the capture was saved, or the record is incomplete. A
+session recorded with the correction carries the `+camera` mode marker, and
+the replay re-applies the same seeded offset.
 
 Neither check says anything about whether the sensor sees a pulse. They check
 the arithmetic, which is the part that can be wrong in a way nobody notices.
@@ -165,7 +169,9 @@ single accuracy percentage and a "plus or minus 2" with no method.
 
 Report all three of bias, spread and limits. A bias near zero with wide limits
 means the method is unbiased and imprecise, which is a different problem from
-a systematic offset.
+a systematic offset. Live readings below 59 bpm include the correction from
+D21, so the bias reported here is the bias of the corrected number, which is
+the number the app shows.
 
 ### Decision rules, fixed before data collection
 

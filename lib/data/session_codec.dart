@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:ppg_core/ppg_core.dart';
 
 import '../data/database.dart';
+import '../measure/camera_bias.dart';
 
 /// Converts between the analysis objects and the stored rows.
 ///
@@ -41,12 +42,25 @@ class SessionCodec {
   }
 
   /// Re-runs a stored capture through either pipeline.
+  ///
+  /// A session recorded with the camera bias correction stores that fact in
+  /// [Session.mode]; the offset is recovered from the stored rate, so the
+  /// stored reading and the re-run agree.
   Measurement replay(Session session, AnalysisMode mode) {
-    return analyseCapture(
+    final timestamps = decodeTimestamps(session.timestampMs);
+    final raw = analyseCapture(
       red: decodeChannel(session.redSamples),
       green: decodeChannel(session.greenSamples),
-      timestampsMs: decodeTimestamps(session.timestampMs),
+      timestampsMs: timestamps,
       mode: mode,
+      ageYears: session.ageYears,
+      weightKg: session.weightKg,
+      heightCm: session.heightCm,
+    );
+    if (!session.cameraCorrected) return raw;
+    return applyCameraBias(
+      raw: raw,
+      offsetBpm: session.cameraBiasBpm.round(),
       ageYears: session.ageYears,
       weightKg: session.weightKg,
       heightCm: session.heightCm,
@@ -71,7 +85,9 @@ class SessionCodec {
           timestamps.isEmpty ? 0 : timestamps.last - timestamps.first,
       frames: measurement.frames,
       fps: measurement.fps,
-      mode: measurement.mode.name,
+      mode: measurement.cameraBiasBpm > 0
+          ? '${measurement.mode.name}+camera'
+          : measurement.mode.name,
       fusedBpm: measurement.fusedHeartRate,
       redBpm: measurement.redBpm,
       greenBpm: measurement.greenBpm,
@@ -100,6 +116,15 @@ class SessionCodec {
 
 extension SessionVerdict on Session {
   bool get hasBloodPressure => systolic != null && diastolic != null;
+
+  /// True when this capture stored the camera bias correction.
+  bool get cameraCorrected => mode.contains('+camera');
+
+  /// The fused rate before the camera correction, in bpm.
+  double get measuredBpm => (redBpm + greenBpm) / 2.0;
+
+  /// The offset stored in this session, or zero when none was applied.
+  double get cameraBiasBpm => cameraCorrected ? fusedBpm - measuredBpm : 0;
 
   QualityBand get qualityBand => switch (verdict) {
         'good' => QualityBand.good,

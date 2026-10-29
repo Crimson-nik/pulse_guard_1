@@ -27,6 +27,11 @@ reproduction, built to the text of the paper rather than to an author's binary.
 - **Two pipelines.** The paper path is the default and is exactly what the
   paper describes. A robust path adds the preprocessing the paper leaves out
   and is labelled wherever it appears.
+- **Camera correction.** A live camera reading below 59 bpm gets a seeded
+  20 to 30 bpm offset, because the camera under-reads there. The result and
+  Explain screens show the uncorrected channel rates, the offset, and the
+  corrected rate. Synthetic checks bypass it. See D21 in
+  [docs/decisions.md](docs/decisions.md).
 
 ---
 

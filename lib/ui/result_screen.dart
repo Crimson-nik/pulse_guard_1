@@ -83,7 +83,9 @@ class _Body extends StatelessWidget {
           Row(
             children: <Widget>[
               Tag(
-                text: session.mode == 'robust' ? 'robust mode' : 'paper mode',
+                text: session.mode.startsWith('robust')
+                    ? 'robust mode'
+                    : 'paper mode',
                 color: colors.slate,
               ),
               const SizedBox(width: Gap.sm),
@@ -95,6 +97,10 @@ class _Body extends StatelessWidget {
                 },
                 color: band == QualityBand.poor ? colors.artery : colors.slate,
               ),
+              if (session.cameraCorrected) ...<Widget>[
+                const SizedBox(width: Gap.sm),
+                Tag(text: 'camera corrected', color: colors.slate),
+              ],
             ],
           ),
           const SizedBox(height: Gap.md),
@@ -143,6 +149,18 @@ class _Body extends StatelessWidget {
                   value: '${session.greenBpm}',
                   unit: 'bpm',
                 ),
+                if (session.cameraCorrected) ...<Widget>[
+                  StatRow(
+                    label: 'Average before correction',
+                    value: session.measuredBpm.toStringAsFixed(1),
+                    unit: 'bpm',
+                  ),
+                  StatRow(
+                    label: 'Camera correction',
+                    value: '+${session.cameraBiasBpm.toStringAsFixed(0)}',
+                    unit: 'bpm',
+                  ),
+                ],
                 StatRow(
                   label: 'Channel disagreement',
                   value: gap.toString(),

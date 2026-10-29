@@ -98,7 +98,8 @@ Five blocks, in the order a person asks the questions.
    block explains why instead of showing a number.
 4. **Evidence**: red bpm, green bpm, their disagreement, frames, measured
    frame rate, pulse strength, clipping. Values that indicate a problem are
-   shown in the warning colour.
+   shown in the warning colour. A live reading below 59 bpm also shows the
+   average before the camera correction and the offset that was added.
 5. **The rejected counter**: how many peaks the sliding average found and what
    rate that implies, with a sentence about why the paper abandoned it.
 
@@ -112,6 +113,8 @@ Four numbered sections and a closing caveat.
   capture's bin index, measured frame rate and transform length filled in.
 - **Two, two colours, one answer**: both channel rates and the average the
   paper takes, with a note that a wide gap is a capture warning, not biology.
+  When the live camera correction ran, this section also shows the offset and
+  the corrected rate the pressure equations used.
 - **Three, the rejected counter**: the peak count and the multiplication.
 - **Four, rate to pressure**: all six equations, substituted, ending in the two
   pressures.
@@ -176,10 +179,12 @@ Three checks, in increasing order of what they can prove.
 
 1. **Recovery from a known rate.** A waveform is generated at a rate you pick,
    then analysed through both pipelines. The true answer is known, so the
-   error is measured, not estimated. This checks the arithmetic end to end.
+   error is measured, not estimated. This checks the arithmetic end to end;
+   it deliberately skips the live camera correction.
 2. **Re-run a stored capture.** Pick a session, re-analyse the saved samples.
    The paper path should reproduce the stored numbers exactly. If it does not,
-   either the code changed or the record is not self contained.
+   either the code changed or the record is not self contained. A session
+   with the `+camera` marker re-applies the same seeded offset.
 3. **Against a second instrument.** Cannot be automated. The screen describes
    the protocol and points at [validation.md](validation.md).
 

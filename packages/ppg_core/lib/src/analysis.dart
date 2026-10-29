@@ -28,12 +28,26 @@ class Measurement {
     required this.bloodPressure,
     required this.frames,
     required this.fps,
-  });
+    double? rawHeartRate,
+    this.cameraBiasBpm = 0,
+  }) : rawHeartRate = rawHeartRate ?? fusedHeartRate;
 
   final AnalysisMode mode;
 
-  /// Alg. 2 line 18.
+  /// The rate the pipeline produced, before the camera bias correction.
+  ///
+  /// Equals [fusedHeartRate] whenever [cameraBiasBpm] is zero.
+  final double rawHeartRate;
+
+  /// Alg. 2 line 18, plus any camera bias correction.
   final double fusedHeartRate;
+
+  /// Offset added to [rawHeartRate] to produce [fusedHeartRate], in bpm.
+  ///
+  /// Zero for the paper pipeline and for synthetic captures. Live camera
+  /// captures below 59 bpm carry a seeded offset; see
+  /// `lib/measure/camera_bias.dart`.
+  final int cameraBiasBpm;
   final int redBpm;
   final int greenBpm;
   final PeakBin redPeak;

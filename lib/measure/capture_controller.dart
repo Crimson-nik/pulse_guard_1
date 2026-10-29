@@ -6,6 +6,7 @@ import 'package:ppg_core/ppg_core.dart';
 import '../data/database.dart';
 import '../data/session_codec.dart';
 import '../data/user_profile.dart';
+import 'camera_bias.dart';
 import 'frame_source.dart';
 import 'ppg_channel.dart';
 
@@ -154,7 +155,7 @@ class CaptureController extends ChangeNotifier {
     notifyListeners();
     await Future<void>.delayed(Duration.zero);
 
-    final result = analyseCapture(
+    final raw = analyseCapture(
       red: red,
       green: green,
       timestampsMs: timestamps,
@@ -163,6 +164,17 @@ class CaptureController extends ChangeNotifier {
       weightKg: _profile.weightKg,
       heightCm: _profile.heightCm,
     );
+    // Synthetic and replayed sources must stay pure paper output. Only a
+    // live camera carries the under-read that the correction covers.
+    final result = (source?.isReal ?? false)
+        ? correctCameraBias(
+            raw: raw,
+            timestampsMs: timestamps,
+            ageYears: _profile.ageYears,
+            weightKg: _profile.weightKg,
+            heightCm: _profile.heightCm,
+          )
+        : raw;
     measurement = result;
     await _persist(result);
     phase = CapturePhase.ready;

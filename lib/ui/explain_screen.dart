@@ -6,6 +6,7 @@ import '../data/session_codec.dart';
 import '../design/format.dart';
 import '../design/page_scaffold.dart';
 import '../design/tokens.dart';
+import '../measure/camera_bias.dart';
 import '../state/app_scope.dart';
 
 /// Every number on the result screen, opened up.
@@ -51,7 +52,9 @@ class _BodyState extends State<_Body> {
   /// analysis actually used rather than a guess derived from the rate.
   late final Measurement _run = const SessionCodec().replay(
     widget.session,
-    widget.session.mode == 'robust' ? AnalysisMode.robust : AnalysisMode.paper,
+    widget.session.mode.startsWith('robust')
+        ? AnalysisMode.robust
+        : AnalysisMode.paper,
   );
 
   @override
@@ -111,10 +114,23 @@ class _BodyState extends State<_Body> {
                     label: 'Green channel', value: '${session.greenBpm}', unit: 'bpm'),
                 StatRow(
                   label: 'Average, Eq. (2) line 18',
-                  value: session.fusedBpm.toStringAsFixed(1),
+                  value: _run.rawHeartRate.toStringAsFixed(1),
                   unit: 'bpm',
-                  emphasis: true,
+                  emphasis: _run.cameraBiasBpm == 0,
                 ),
+                if (_run.cameraBiasBpm > 0) ...<Widget>[
+                  StatRow(
+                    label: 'Camera bias correction',
+                    value: '+${_run.cameraBiasBpm}',
+                    unit: 'bpm',
+                  ),
+                  StatRow(
+                    label: 'Heart rate used',
+                    value: session.fusedBpm.toStringAsFixed(1),
+                    unit: 'bpm',
+                    emphasis: true,
+                  ),
+                ],
                 const SizedBox(height: Gap.sm),
                 Text(
                   'The paper averages the two without checking whether they '
@@ -123,6 +139,17 @@ class _BodyState extends State<_Body> {
                   'of your heart.',
                   style: bodyStyle(context, color: colors.muted),
                 ),
+                if (_run.cameraBiasBpm > 0) ...<Widget>[
+                  const SizedBox(height: Gap.sm),
+                  Text(
+                    'The camera under-reads below '
+                    '${cameraBiasThresholdBpm.toStringAsFixed(0)} bpm on this '
+                    'device, so the app adds a seeded ${_run.cameraBiasBpm} '
+                    'bpm before the pressure equations. The channel rates and '
+                    'the transform above are the uncorrected camera values.',
+                    style: bodyStyle(context, color: colors.muted),
+                  ),
+                ],
               ],
             ),
           ),

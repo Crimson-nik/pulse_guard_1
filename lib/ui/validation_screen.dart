@@ -33,6 +33,8 @@ class _ValidationScreenState extends State<ValidationScreen> {
 
   void _runSynthetic() {
     final capture = synthesiseCapture(heartRate: _trueRate);
+    // Deliberately no camera correction here. This check exists to measure
+    // the paper arithmetic; the live camera path is corrected separately.
     final paper = analyseCapture(
       red: capture.red,
       green: capture.green,
@@ -87,7 +89,8 @@ class _ValidationScreenState extends State<ValidationScreen> {
                 Text(
                   'A waveform is generated at a rate you choose, then analysed '
                   'through both pipelines. The true answer is known, so the '
-                  'error is real and not estimated.',
+                  'error is real and not estimated. This check runs the paper '
+                  'arithmetic without the live camera bias correction.',
                   style: bodyStyle(context),
                 ),
                 const SizedBox(height: Gap.lg),

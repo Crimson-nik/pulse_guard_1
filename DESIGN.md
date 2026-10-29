@@ -110,6 +110,8 @@ Two tables.
 `sessions`: one row per capture. Timestamps, mode, frame count, measured fps,
 red and green bpm, fused bpm, peak count, sliding bpm, quality metrics, the
 profile used, the blood pressure intermediates, and a verdict column. The
+mode is `paper`, `robust`, or one of those with `+camera` when the live
+camera correction in D21 was applied. The
 intermediates (ejection time, body surface area, stroke volume, pulse
 pressure) are stored rather than recomputed so a stored session stays exactly
 what the user saw, even if the code changes later.
@@ -131,7 +133,8 @@ The result screen answers, in order of what a person actually wants:
 2. Whether to trust it. One line, plus the reason when the answer is no.
 3. Blood pressure, clearly labelled as a model estimate.
 4. The evidence: red bpm, green bpm, the gap between them, the rejected
-   counting method's answer, frame count, measured frame rate.
+   counting method's answer, frame count, measured frame rate. A corrected
+   live reading also shows the pre-correction average and the offset.
 5. A link into Explain, which shows the equations and this capture's numbers
    inside them.
 

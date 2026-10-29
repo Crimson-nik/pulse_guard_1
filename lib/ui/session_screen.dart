@@ -69,7 +69,9 @@ class _SessionScreenState extends State<SessionScreen> {
           Row(
             children: <Widget>[
               Tag(
-                text: session.mode == 'robust' ? 'robust mode' : 'paper mode',
+                text: session.mode.startsWith('robust')
+                    ? 'robust mode'
+                    : 'paper mode',
                 color: colors.slate,
               ),
               const SizedBox(width: Gap.sm),
@@ -83,6 +85,10 @@ class _SessionScreenState extends State<SessionScreen> {
                     ? colors.artery
                     : colors.slate,
               ),
+              if (session.cameraCorrected) ...<Widget>[
+                const SizedBox(width: Gap.sm),
+                Tag(text: 'camera corrected', color: colors.slate),
+              ],
             ],
           ),
           const Rule(),
@@ -93,6 +99,18 @@ class _SessionScreenState extends State<SessionScreen> {
                 StatRow(label: 'Heart rate', value: session.fusedBpm.toStringAsFixed(1), unit: 'bpm', emphasis: true),
                 StatRow(label: 'Red channel', value: '${session.redBpm}', unit: 'bpm'),
                 StatRow(label: 'Green channel', value: '${session.greenBpm}', unit: 'bpm'),
+                if (session.cameraCorrected) ...<Widget>[
+                  StatRow(
+                    label: 'Average before correction',
+                    value: session.measuredBpm.toStringAsFixed(1),
+                    unit: 'bpm',
+                  ),
+                  StatRow(
+                    label: 'Camera correction',
+                    value: '+${session.cameraBiasBpm.toStringAsFixed(0)}',
+                    unit: 'bpm',
+                  ),
+                ],
                 StatRow(label: 'Sliding average', value: '${session.slidingBpm}', unit: 'bpm'),
                 StatRow(
                   label: 'Blood pressure',
