@@ -85,10 +85,6 @@ class _SessionScreenState extends State<SessionScreen> {
                     ? colors.artery
                     : colors.slate,
               ),
-              if (session.cameraCorrected) ...<Widget>[
-                const SizedBox(width: Gap.sm),
-                Tag(text: 'camera corrected', color: colors.slate),
-              ],
             ],
           ),
           const Rule(),

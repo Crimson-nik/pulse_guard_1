@@ -98,8 +98,7 @@ Five blocks, in the order a person asks the questions.
    block explains why instead of showing a number.
 4. **Evidence**: red bpm, green bpm, their disagreement, frames, measured
    frame rate, pulse strength, clipping. Values that indicate a problem are
-   shown in the warning colour. A live reading below 59 bpm also shows the
-   average before the camera correction and the offset that was added.
+   shown in the warning colour.
 5. **The rejected counter**: how many peaks the sliding average found and what
    rate that implies, with a sentence about why the paper abandoned it.
 

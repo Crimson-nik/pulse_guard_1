@@ -133,8 +133,7 @@ The result screen answers, in order of what a person actually wants:
 2. Whether to trust it. One line, plus the reason when the answer is no.
 3. Blood pressure, clearly labelled as a model estimate.
 4. The evidence: red bpm, green bpm, the gap between them, the rejected
-   counting method's answer, frame count, measured frame rate. A corrected
-   live reading also shows the pre-correction average and the offset.
+   counting method's answer, frame count, measured frame rate.
 5. A link into Explain, which shows the equations and this capture's numbers
    inside them.
 

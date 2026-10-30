@@ -259,8 +259,8 @@ unchanged.
 discontinuously lifts a 58.9 bpm reading into the 79 to 89 range, and it
 cannot distinguish a genuine bradycardic reading from the camera under-read.
 The agreement protocol in [validation.md](validation.md) is how to replace it
-with a measured correction; until then the result and Explain screens label
-the correction explicitly.
+with a measured correction; until then the Explain screen labels the
+correction explicitly.
 
 ---
 
