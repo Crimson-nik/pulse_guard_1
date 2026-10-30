@@ -163,6 +163,48 @@ void main() {
     controller.dispose();
   });
 
+  test('a flat camera capture is not boosted by the correction', () async {
+    final controller = CaptureController(database: database);
+
+    final done = Completer<void>();
+    controller.addListener(() {
+      if (controller.phase == CapturePhase.ready && !done.isCompleted) {
+        done.complete();
+      }
+      if (controller.phase == CapturePhase.failed && !done.isCompleted) {
+        done.completeError(StateError(controller.failure ?? 'capture failed'));
+      }
+    });
+
+    const frames = 900;
+    final red = List<double>.filled(frames, 200.0);
+    final green = List<double>.filled(frames, 200.0);
+    final stamps = <int>[
+      for (var i = 0; i < frames; i++) (i * 1000 / 30).round(),
+    ];
+    await controller.begin(
+      _CameraLikeSource(
+        red: red,
+        green: green,
+        timestampsMs: stamps,
+      ),
+      AnalysisMode.paper,
+    );
+    await done.future.timeout(const Duration(seconds: 15));
+
+    final measurement = controller.measurement!;
+    expect(measurement.quality.band, QualityBand.poor);
+    expect(measurement.rawHeartRate, lessThan(cameraBiasThresholdBpm));
+    expect(measurement.cameraBiasBpm, 0);
+
+    final stored = await database.watchSession(controller.savedSessionId).first;
+    expect(stored, isNotNull);
+    expect(stored!.cameraCorrected, isFalse);
+    expect(stored.mode, 'paper');
+
+    controller.dispose();
+  });
+
   test('the seeded offset stays in range and is stable', () {
     final capture = synthesiseCapture(heartRate: 50, seconds: 30);
     final first = cameraBiasOffsetBpm(capture.timestampsMs);

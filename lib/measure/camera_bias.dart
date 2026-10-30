@@ -72,7 +72,8 @@ Measurement correctCameraBias({
   required double heightCm,
 }) {
   if (raw.cameraBiasBpm > 0 ||
-      raw.fusedHeartRate >= cameraBiasThresholdBpm) {
+      raw.fusedHeartRate >= cameraBiasThresholdBpm ||
+      raw.quality.band == QualityBand.poor) {
     return raw;
   }
   return applyCameraBias(

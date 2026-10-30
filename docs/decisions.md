@@ -255,6 +255,11 @@ records the correction as `paper+camera` or `robust+camera`, so replay knows
 to re-apply it. Synthetic captures and sessions without the marker are
 unchanged.
 
+A capture the quality gate already marks poor is left alone. Boosting a
+no-pulse recording (a book, a table, a finger off the lens) by 20 to 30 bpm
+would turn noise into a plausible-looking reading, which is worse than
+showing the raw failure.
+
 **Cost:** this is a device-specific fudge, not a calibration curve. It
 discontinuously lifts a 58.9 bpm reading into the 79 to 89 range, and it
 cannot distinguish a genuine bradycardic reading from the camera under-read.
